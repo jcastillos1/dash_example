@@ -6,6 +6,7 @@ import dash, os
 
 
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
+server = app.server
 app.layout = html.Div([
     html.Img(src='https://media.licdn.com/dms/image/C560BAQEkLah7iU0OXg/company-logo_200_200/0/1622576378267?e=1701907200&v=beta&t=jHOKiWYubvJbIHNss3cvWPgbf5Rv_427P9tq7jcd5pY', style={'display': 'block', 'margin-left': 'auto', 'margin-right': 'auto'}),
     html.H1('Generador automático de informes', style={'width': '100%', 'color':'#878786', 'margin-top': '-10px', 'textAlign': 'center', 'font-family': 'Arial, sans-serif'}),
