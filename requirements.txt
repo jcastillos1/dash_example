@@ -2,7 +2,7 @@ colorama==0.4.6
 click==8.1.7
 plotly==5.15.0
 dash-table==5.0.0
-fonttools==4.40.0
+fonttools==4.38.0
 selenium==4.11.2
 zipp==3.16.2
 requests==2.31.0
