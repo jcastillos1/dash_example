@@ -13,7 +13,7 @@ app.layout = html.Div([
     dcc.Input(id='email', type='email', placeholder='Ingrese su correo', style={'width': '100%', 'height': '50px', 'margin-top': '10px'}),
     dcc.Input(id='password', type='password', placeholder='Ingrese su contraseña', style={'width': '100%', 'height': '50px', 'margin-top': '10px'}),
     dcc.Input(id='client', type='text', placeholder='Ingrese el cliente', style={'width': '100%', 'height': '50px', 'margin-top': '10px'}),
-    html.Button('Run Dash', id='login-button', n_clicks=0, style={'width': '102%', 'height': '50px', 'margin-top': '10px'}),
+    html.Button('Run Dash', id='login-button', n_clicks=0, style={'width': '101.5%', 'height': '50px', 'margin-top': '10px'}),
     html.Div(id='output-container-button', style={'margin-top': '20px'})
 ], style={'width': '30%', 'margin-left': 'auto', 'margin-right': 'auto'})
 @app.callback(
@@ -24,7 +24,7 @@ app.layout = html.Div([
      State('client', 'value')]
 )
 def update_output(n_clicks, email, password, client):
-    if n_clicks == 1:
+    if n_clicks != 0:
         start_time = time.time()
         if email == 'test@test.com' and password == 'password':
             data = data_api(client)
@@ -35,7 +35,7 @@ def update_output(n_clicks, email, password, client):
         else:
             return 'Access denied. Please check your credentials.'
     else:
-        return html.P('Estimated time to generate Dash: 20s')
+        return html.P('Tiempo estimado para generar el Dash: 20s')
     
 if __name__ == '__main__':
     app.run_server(debug=True)
