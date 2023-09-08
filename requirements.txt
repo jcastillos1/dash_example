@@ -8,6 +8,5 @@ python-dateutil
 numpy
 plotly
 requests
-base64
 flask
 gunicorn
