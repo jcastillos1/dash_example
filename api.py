@@ -1,8 +1,8 @@
-import grpc, math
+import grpc
 import partner_api2_pb2_grpc as api
 from partner_api2_pb2 import *
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import numpy as np
 
@@ -23,7 +23,7 @@ def data_api(cliente):
 
     deviceUsageRequest = DeviceUsageRequest()
     deviceUsageRequest.auth_token = auth_token
-    now = math.ceil(datetime.now().timestamp())
+    now = int((datetime.now().replace(microsecond=0) + timedelta(seconds=1)).timestamp())
     deviceUsageRequest.start_epoch_seconds = now - 60*60*24*30*2 # one hour of seconds
     deviceUsageRequest.end_epoch_seconds = now
     deviceUsageRequest.scale = DataResolution.Days
