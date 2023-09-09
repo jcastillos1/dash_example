@@ -18,8 +18,6 @@ def transforming(cliente, data):
     data = data.rename(columns=lambda col: col.replace('_x', ''))
     data['Consumo total'] = data[fases].sum(axis=1)
     data = data.drop(columns = fases).rename(columns=lambda col: col.replace(' (kWhs)', ''))
-    data['Time Bucket'] = pd.to_datetime(data['Time Bucket'], format='%m/%d/%Y %H:%M:%S')
-
 
     etiq_df = data.drop(['Consumo total']+list(set(etiquetas)),axis=1,inplace=False)
     #Fig1
