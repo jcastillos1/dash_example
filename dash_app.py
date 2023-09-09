@@ -7,7 +7,7 @@ import requests, base64
 import dash, time
 
 
-tokens = {'test@test.com': 2}
+tokens = {'test@test.com': 10}
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
