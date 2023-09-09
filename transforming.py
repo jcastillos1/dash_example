@@ -1,8 +1,6 @@
 from dash import dcc, html, dash_table
 import plotly.express as px
 import pandas as pd
-from io import BytesIO
-import requests, base64
 
 
 def transforming(cliente, data):
@@ -20,6 +18,7 @@ def transforming(cliente, data):
     data = data.rename(columns=lambda col: col.replace('_x', ''))
     data['Consumo total'] = data[fases].sum(axis=1)
     data = data.drop(columns = fases).rename(columns=lambda col: col.replace(' (kWhs)', ''))
+    data['Time Bucket'] = pd.to_datetime(data['Time Bucket'], format='%m/%d/%Y %H:%M:%S')
 
 
     etiq_df = data.drop(['Consumo total']+list(set(etiquetas)),axis=1,inplace=False)
@@ -117,68 +116,63 @@ def transforming(cliente, data):
     table2.insert(0, 'Circuito', table2.index)
     table3.insert(0, '', table3.index)
 
-    url = "https://media.licdn.com/dms/image/C560BAQEkLah7iU0OXg/company-logo_200_200/0/1622576378267?e=1701907200&v=beta&t=jHOKiWYubvJbIHNss3cvWPgbf5Rv_427P9tq7jcd5pY"
-    response = requests.get(url)
-    image_bytes = BytesIO(response.content)
-    encoded_image = base64.b64encode(image_bytes.read()).decode("utf-8")
-    layout_dashboard = html.Div([
-    html.Div([
-        html.Img(src='data:image/png;base64,{}'.format(encoded_image), style={'width':'12.5%', 'float':'left', 'margin-left':'150px', 'margin-top':'-35px'}),
-        html.H1(f'Reporte cliente: {cliente}', style={'font-size':'40px', 'color':'#668616', 'font-family':'Arial, sans-serif'}),
+
+    title_output = html.Div([
+        html.H1(f'Reporte cliente: {cliente}', style={'font-size':'40px', 'color':'#668616', 'font-family':'Arial, sans-serif', 'margin-bottom': '5px'}),
         html.P(f'Desde: {df["Time Bucket"].max()}. Hasta: {df["Time Bucket"].max()-pd.DateOffset(months=1)}', style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
         html.P(f"Generado el día: {pd.Timestamp.now().strftime('%Y-%m-%d - %H:%M:%S')}", style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
-    ], style={'width':'100%', 'text-align':'center'}),
-    html.Div([
-        html.Div([
-            dash_table.DataTable(
-                id='Consumo por fases',
-                columns=[{'name': col, 'id': col} for col in table1.columns],
-                data=table1.to_dict('records'),
-                style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
-                            'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
-                            'maxWidth':'150px', 'overflowWrap': 'break-word'},
-                style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
-            ),
-            dash_table.DataTable(
-                id='Consumo por circuito',
-                columns=[{'name': col, 'id': col} for col in table2.columns],
-                data=table2.to_dict('records'),
-                style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
-                            'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
-                            'maxWidth':'150px', 'overflowWrap': 'break-word'},
-                style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
-            ),
-            dash_table.DataTable(
-                id='Análisis',
-                columns=[{'name': col, 'id': col} for col in table3.columns],
-                data=table3.to_dict('records'),
-                style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
-                            'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
-                            'maxWidth':'150px', 'overflowWrap': 'break-word'},
-                style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
-            ),
-        ], style={'width':'22%', 'float':'left', 'margin-right':'0px'}),
+    ], style={'width':'100%', 'text-align':'center'})
+    dash_output= html.Div([
         html.Div([
             html.Div([
-                dcc.Graph(figure=fig1, style={'margin-right': '0'}), 
-            ], style={'grid-area':'graph1', 'margin-bottom':'-15px'}),
+                dash_table.DataTable(
+                    id='Consumo por fases',
+                    columns=[{'name': col, 'id': col} for col in table1.columns],
+                    data=table1.to_dict('records'),
+                    style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
+                                'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
+                                'maxWidth':'150px', 'overflowWrap': 'break-word'},
+                    style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
+                ),
+                dash_table.DataTable(
+                    id='Consumo por circuito',
+                    columns=[{'name': col, 'id': col} for col in table2.columns],
+                    data=table2.to_dict('records'),
+                    style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
+                                'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
+                                'maxWidth':'150px', 'overflowWrap': 'break-word'},
+                    style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
+                ),
+                dash_table.DataTable(
+                    id='Análisis',
+                    columns=[{'name': col, 'id': col} for col in table3.columns],
+                    data=table3.to_dict('records'),
+                    style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
+                                'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
+                                'maxWidth':'150px', 'overflowWrap': 'break-word'},
+                    style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
+                ),
+            ], style={'width':'22%', 'float':'left', 'margin-right':'0px'}),
             html.Div([
-                dcc.Graph(figure=fig2, style={'margin-right': '0'}),  
-            ], style={'grid-area':'graph2', 'margin-bottom':'-15px'}),
-            html.Div([
-                dcc.Graph(figure=fig3, style={'margin-right': '0px', 'width': '460px', 'height': '460px'}),
-            ], style={'grid-area':'graph3', 'margin-bottom':'-15px'}),
-            html.Div([
-                dcc.Graph(figure=fig4, style={'margin-right': '0'}),  
-            ], style={'grid-area':'graph4', 'margin-bottom':'-15px'}),
-            html.Div([
-                dcc.Graph(figure=fig5, style={'margin-right': '0'}),  
-            ], style={'grid-area':'graph5', 'margin-bottom':'-15px'}),
-            html.Div([
-                dcc.Graph(figure=fig6, style={'margin-right': '0px'}),  
-            ], style={'grid-area':'graph6', 'margin-bottom':'-15px'}),
-        ], style={'display':'grid', 'grid-template-columns':'repeat(3, 1fr)',
-                'grid-template-areas':"'graph1 graph2 graph3' 'graph4 graph5 graph6'"}),
-    ])], style={'display':'grid', 'font-family':'Arial, sans-serif', 'width': 'calc(100% + 45px)', 'margin-right':'0'})
-    
-    return layout_dashboard
+                html.Div([
+                    dcc.Graph(figure=fig1, style={'margin-right': '0'}), 
+                ], style={'grid-area':'graph1', 'margin-bottom':'-15px'}),
+                html.Div([
+                    dcc.Graph(figure=fig2, style={'margin-right': '0'}),  
+                ], style={'grid-area':'graph2', 'margin-bottom':'-15px'}),
+                html.Div([
+                    dcc.Graph(figure=fig3, style={'margin-right': '0px', 'width': '460px', 'height': '460px'}),
+                ], style={'grid-area':'graph3', 'margin-bottom':'-15px'}),
+                html.Div([
+                    dcc.Graph(figure=fig4, style={'margin-right': '0'}),  
+                ], style={'grid-area':'graph4', 'margin-bottom':'-15px'}),
+                html.Div([
+                    dcc.Graph(figure=fig5, style={'margin-right': '0'}),  
+                ], style={'grid-area':'graph5', 'margin-bottom':'-15px'}),
+                html.Div([
+                    dcc.Graph(figure=fig6, style={'margin-right': '0px'}),  
+                ], style={'grid-area':'graph6', 'margin-bottom':'-15px'}),
+            ], style={'display':'grid', 'grid-template-columns':'repeat(3, 1fr)',
+                    'grid-template-areas':"'graph1 graph2 graph3' 'graph4 graph5 graph6'"}),
+        ])], style={'display':'grid', 'font-family':'Arial, sans-serif', 'width': 'calc(100% + 45px)', 'margin-right':'0'})
+    return title_output, dash_output
