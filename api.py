@@ -23,8 +23,9 @@ def data_api(cliente):
 
     deviceUsageRequest = DeviceUsageRequest()
     deviceUsageRequest.auth_token = auth_token
+    date_range = pd.date_range(start=datetime.now()-relativedelta(days=90), end=datetime.now()-relativedelta(days=1))
     now = int((datetime.now().replace(microsecond=0) + timedelta(seconds=1)).timestamp())
-    deviceUsageRequest.start_epoch_seconds = now - 60*60*24*30*2 # one hour of seconds
+    deviceUsageRequest.start_epoch_seconds = now - len(date_range) * 24 * 60 * 60 # one hour of seconds
     deviceUsageRequest.end_epoch_seconds = now
     deviceUsageRequest.scale = DataResolution.Days
     deviceUsageRequest.channels = DeviceUsageRequest.UsageChannel.ALL
