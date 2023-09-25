@@ -10,6 +10,7 @@ import pandas as pd
 import dash, time
 
 
+tokens = {'test@test.com': 100}
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
@@ -53,10 +54,11 @@ def update_output(n_clicks, email, client, start_date, end_date):
             end_date = pd.Timestamp(end_date).to_pydatetime().date()
             title_output, dash_output = transforming(client, data, start_date, end_date)
             execution_time = round(time.time() - start_time, 2)
+            tokens[email] -= 1
             return f'Tiempo de ejecución: {execution_time}s',title_output, dash_output
         else:
             return 'Acceso denegado. Verifica tus credenciales o revisa tus tokens.', None, None
     else:
-        return 'Tiempo estimado en generar Dash: 20s', None, None
+        return 'Tiempo estimado en generar Dash: 30s', None, None
 if __name__ == '__main__':
     app.run_server(debug=True)
