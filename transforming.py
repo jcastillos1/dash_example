@@ -1,5 +1,6 @@
 from dateutil.relativedelta import relativedelta
 from dash import dcc, html, dash_table
+import plotly.graph_objs as go
 import plotly.express as px
 import pandas as pd
 
@@ -57,16 +58,22 @@ def transforming(cliente, data, start_date, end_date):
     # Fig4
     df_mes_actual = filtered_df
     df_mes_anterior = data[data["Time Bucket"] >= filtered_df["Time Bucket"].max()-relativedelta(days=len(filtered_df))]
-    fig4 = px.bar()
-    fig4.add_bar(x=filtered_df["Time Bucket"], y=filtered_df["Consumo total"], name="Mes Actual")
-    fig4.add_bar(x=filtered_df["Time Bucket"], y=df_mes_anterior["Consumo total"], name="Mes Anterior")
-    fig4.update_traces(marker_color='#668616', selector=dict(name="Mes Actual"))
-    fig4.update_traces(marker_color='#C0cea2', selector=dict(name="Mes Anterior"))
-    fig4.update_layout(title='Comparación de consumo con periodo anterior',
+    fig4 = go.Figure()
+    fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
+                        y=df_mes_actual["Consumo total"], 
+                        name="Mes Actual",
+                        marker_color='#C0cea2'))
+    fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
+                        y=df_mes_anterior["Consumo total"], 
+                        name="Mes Anterior",
+                        marker_color='#668616'))
+    fig4.update_layout(barmode='overlay', 
+                    title='Comparación de consumo con periodo anterior',
                     legend=dict(orientation="h", yanchor="bottom", y=0.97, xanchor="right", x=1),
                     xaxis_title="Fecha", yaxis_title="Consumo total (kWh)",
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+    fig4.update_yaxes(type='log')
     # Fig5
     circuitos = etiq_df.drop(['Time Bucket']+fases,axis=1,inplace=False).sum()
     table2 = pd.DataFrame(circuitos)
@@ -74,9 +81,10 @@ def transforming(cliente, data, start_date, end_date):
     table2.loc['Otras Cargas',:] = filtered_df[fases].sum().sum()-circuitos.sum()
     table2['%'] = (table2)/(table2.sum().sum())*100
     table2.loc['Total',:] = table2.sum()
+    plot = table2.sort_values(by='%', ascending=False)
     table2 = table2.sort_values(by='%', ascending=True)
     table2 = table2.applymap(lambda x: '{:.2f}'.format(x))
-    fig5 = px.bar(x=table2.drop('Total').index,y=table2.drop('Total')['%'], barmode='group')
+    fig5 = px.bar(x=plot.drop('Total').index, y=plot.drop('Total')['%'], barmode='group')
     fig5.update_traces(marker_color='#668616')
     fig5.update_layout(title='Consumos principales por circuito',  
                     yaxis_title='Consumo total (%)', showlegend=False, xaxis_title='',
@@ -84,7 +92,7 @@ def transforming(cliente, data, start_date, end_date):
     #Fig6
     df = df_mes_anterior.drop(['Time Bucket','Consumo total']+list(set(etiquetas))+fases,axis=1)
     df = df[df > df.mean()+2*df.std()]
-    fig6 = px.bar(df.sum(), orientation='h')
+    fig6 = px.bar(df.sum()[df.sum()>1], orientation='h')
     fig6.update_traces(marker_color='#668616')
     fig6.update_layout(title='Consumos atípicos con periodo anterior (µ+2σ)', 
                     xaxis_title="Consumo total (kWh)", showlegend=False, yaxis_title="",
