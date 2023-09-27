@@ -41,8 +41,8 @@ def data_api(cliente):
     data['Time Bucket'] = pd.date_range(start=datetime.now()-relativedelta(days=days)+relativedelta(days=1),end=datetime.now()).date
     for circuit in device_found.channel_usages:
         if circuit.channel in names.keys():
-            data[f'{circuit.channel}-{names[circuit.channel]}'] = np.array(circuit.usages)/100
-        if circuit.channel == 1: data[f'{circuit.channel}-Mains_A'] = np.array(circuit.usages)/100
-        if circuit.channel == 2: data[f'{circuit.channel}-Mains_B'] = np.array(circuit.usages)/100
-        if circuit.channel == 3: data[f'{circuit.channel}-Mains_C'] = np.array(circuit.usages)/100
+            data[f'{circuit.channel}-{names[circuit.channel]}'] = np.array(circuit.usages)/1000
+        if circuit.channel == 1: data[f'{circuit.channel}-Mains_A'] = np.array(circuit.usages)/1000
+        if circuit.channel == 2: data[f'{circuit.channel}-Mains_B'] = np.array(circuit.usages)/1000
+        if circuit.channel == 3: data[f'{circuit.channel}-Mains_C'] = np.array(circuit.usages)/1000
     return data
