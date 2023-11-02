@@ -22,11 +22,11 @@ def transforming(cliente, data, start_date, end_date):
     filtered_df = data.loc[(data['Time Bucket'] >= start_date) & (data['Time Bucket'] <= end_date)]
     etiq_df = filtered_df.drop(['Consumo total']+list(set(etiquetas)),axis=1,inplace=False)
 
-
+    # Gráficos
     #Fig1
-    fig1 = px.bar(x=filtered_df["Time Bucket"], y=filtered_df["Consumo total"])
-    fig1.update_traces(marker_color='#668616')
-    fig1.update_layout(title="Consumo total",
+    fig1 = px.line(x=data["Time Bucket"], y=data["Consumo total"])
+    fig1.update_traces(line=dict(color='#668616'))
+    fig1.update_layout(title="Consumo total histórico",
                     xaxis_title="Fecha", yaxis_title="Consumo total (kWh)",
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
@@ -60,17 +60,16 @@ def transforming(cliente, data, start_date, end_date):
     df_mes_anterior = data[data["Time Bucket"] >= filtered_df["Time Bucket"].max()-relativedelta(days=len(filtered_df))]
     fig4 = go.Figure()
     fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
-                        y=df_mes_actual["Consumo total"], 
-                        name="Mes Actual",
-                        marker_color='#C0cea2'))
+                    y=df_mes_actual["Consumo total"], 
+                    name="Mes Actual",
+                    marker_color='#C0cea2'))
     fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
-                        y=df_mes_anterior["Consumo total"], 
-                        name="Mes Anterior",
-                        marker_color='#668616'))
+                    y=df_mes_anterior["Consumo total"], 
+                    name="Mes Anterior",
+                    marker_color='#668616'))
     fig4.update_layout(barmode='overlay', 
-                    title='Comparación de consumo con periodo anterior',
+                    title='Comparación de consumo con periodo anterior', yaxis_title="Consumo total (kWh)",
                     legend=dict(orientation="h", yanchor="bottom", y=0.97, xanchor="right", x=1),
-                    xaxis_title="Fecha", yaxis_title="Consumo total (kWh)",
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     fig4.update_yaxes(type='log')
@@ -97,8 +96,7 @@ def transforming(cliente, data, start_date, end_date):
     fig6.update_layout(title='Consumos atípicos con periodo anterior (µ+2σ)', 
                     xaxis_title="Consumo total (kWh)", showlegend=False, yaxis_title="",
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    
-    #Tables
+    # Tables
     table1 = pd.DataFrame(filtered_df[fases].sum())
     table1.columns = ['Consumo (kWh)']
     table1.loc['Total',:] = filtered_df[fases].sum().sum()
@@ -117,11 +115,11 @@ def transforming(cliente, data, start_date, end_date):
     table2.insert(0, 'Circuito', table2.index)
     table3.insert(0, '', table3.index)
 
-
+    # Output_dash_layout
     title_output = html.Div([
         html.H1(f'Reporte cliente: {cliente}', style={'font-size':'40px', 'color':'#668616', 'font-family':'Arial, sans-serif', 'margin-bottom': '5px'}),
         html.P(f'Desde: {filtered_df["Time Bucket"].min()}. Hasta: {filtered_df["Time Bucket"].max()}', style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
-        html.P(f"Generado el día: {pd.Timestamp.now().strftime('%Y-%m-%d - %H:%M:%S')}", style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
+        html.P(f"Data tomada hasta: {pd.Timestamp.now().strftime('%Y-%m-%d - %H:%M:%S')}", style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
     ], style={'width':'100%', 'text-align':'center'})
     dash_output= html.Div([
         html.Div([
