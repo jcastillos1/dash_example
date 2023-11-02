@@ -32,6 +32,7 @@ def data_api(cliente):
     names = {}; data = pd.DataFrame()
     for device in inventoryResponse.devices: 
         if cliente.lower() in device.device_name.lower():
+            device_name = device.device_name
             device_id = device.manufacturer_device_id
             for circuit in device.circuit_infos:
                 if circuit.name != '': 
@@ -45,4 +46,5 @@ def data_api(cliente):
         if circuit.channel == 1: data[f'{circuit.channel}-Mains_A'] = np.array(circuit.usages)/1000
         if circuit.channel == 2: data[f'{circuit.channel}-Mains_B'] = np.array(circuit.usages)/1000
         if circuit.channel == 3: data[f'{circuit.channel}-Mains_C'] = np.array(circuit.usages)/1000
-    return data
+    
+    return device_name, data
