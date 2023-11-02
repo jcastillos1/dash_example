@@ -10,7 +10,6 @@ import pandas as pd
 import dash, time
 
 
-tokens = {'test@test.com': 100}
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
@@ -30,7 +29,6 @@ app.layout = html.Div([
             initial_visible_month=(datetime.now()-relativedelta(months=1)).date(),
             start_date=(datetime.now()-relativedelta(months=1)).date(),
             end_date=date_range.max()),
-    html.Button('Generar informe', id='generate_button', n_clicks=0, style={'width':'10%'}),
     html.Div(id='text_info'),
     html.Div(id='title_output'),
     html.Div(id='dash_output'),
@@ -39,22 +37,20 @@ app.layout = html.Div([
     Output('text_info', 'children'),
     Output('title_output', 'children'),
     Output('dash_output', 'children'),
-    Input('generate_button', 'n_clicks'),
     Input('email', 'value'),
     Input('client', 'value'),
     Input('my-date-picker-range', 'start_date'),
     Input('my-date-picker-range', 'end_date')
 )
-def update_output(n_clicks, email, client, start_date, end_date):
-    if n_clicks  != 0:
+def update_output(email, client, start_date, end_date):
+    if email and client:
         start_time = time.time()
-        if email in tokens.keys() and tokens[email] >= 1:
-            data = data_api(client)
+        if email in ['info@cigepty.com', 'hsoto@cigepty.com']:
+            device_name, data = data_api(client)
             start_date = pd.Timestamp(start_date).to_pydatetime().date()
             end_date = pd.Timestamp(end_date).to_pydatetime().date()
-            title_output, dash_output = transforming(client, data, start_date, end_date)
+            title_output, dash_output = transforming(device_name, data, start_date, end_date)
             execution_time = round(time.time() - start_time, 2)
-            tokens[email] -= 1
             return f'Tiempo de ejecución: {execution_time}s',title_output, dash_output
         else:
             return 'Acceso denegado. Verifica tus credenciales o revisa tus tokens.', None, None
