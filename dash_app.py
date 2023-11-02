@@ -1,177 +1,60 @@
+from api import data_api
+from transforming import transforming
+from dash.dependencies import Input, Output, State
 from dateutil.relativedelta import relativedelta
-from dash import dcc, html, dash_table
-import plotly.graph_objs as go
-import plotly.express as px
+from datetime import datetime
+from dash import dcc, html
+from io import BytesIO
+import requests, base64
 import pandas as pd
+import dash, time
 
 
-def transforming(cliente, data, start_date, end_date):
-    data = data.copy()
-    lista_separada = [valor.split('-') for valor in data.columns]
-    fases = [elemento[1] for elemento in lista_separada if len(elemento) == 2]
-    etiquetas = [elemento[1] for elemento in lista_separada if len(elemento) >= 3]
-    circuito = [elemento[2] for elemento in lista_separada if len(elemento) >= 3]
-    data.columns = ['Time Bucket'] + fases + circuito
-    data_ = data.copy()
-    data_.columns = ['Time Bucket'] + fases + etiquetas
-    data_ = data_.groupby(data_.columns, axis=1).sum()
-    data = data.merge(data_, on='Time Bucket')
-    data = data[[col for col in data.columns if not col.endswith('_y')]]
-    data = data.rename(columns=lambda col: col.replace('_x', ''))
-    data['Consumo total'] = data[fases].sum(axis=1)
-    filtered_df = data.loc[(data['Time Bucket'] >= start_date) & (data['Time Bucket'] <= end_date)]
-    etiq_df = filtered_df.drop(['Consumo total']+list(set(etiquetas)),axis=1,inplace=False)
-
-    # Gráficos
-    #Fig1
-    fig1 = px.line(x=data["Time Bucket"], y=data["Consumo total"])
-    fig1.update_traces(line=dict(color='#668616'))
-    fig1.update_layout(title="Consumo total histórico",
-                    xaxis_title="Fecha", yaxis_title="Consumo total (kWh)",
-                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    #Fig2
-    base_color = '#668616'
-    num_colors = 7  # Número de tonos en la paleta
-    lighten_factor = 1.5  # Factor de aclarado
-    color_palette = [base_color]
-    for i in range(1, num_colors):
-        r = int(base_color[1:3], 16)
-        g = int(base_color[3:5], 16)
-        b = int(base_color[5:7], 16)
-        r_new = min(255, r + int((255 - r) * (lighten_factor * i / num_colors)))
-        g_new = min(255, g + int((255 - g) * (lighten_factor * i / num_colors)))
-        b_new = min(255, b + int((255 - b) * (lighten_factor * i / num_colors)))
-        color = "#{:02x}{:02x}{:02x}".format(r_new, g_new, b_new)
-        color_palette.append(color)
-    fig2 = px.pie(values=filtered_df[circuito].sum().sort_values(ascending=False)[:7].values,
-        names=filtered_df[circuito].sum().sort_values(ascending=False)[:7].index,
-        hole=0.5, title="Consumo por circuito (dispositivo)",
-        color_discrete_sequence=color_palette)
-    fig2.update_traces(marker=dict(line=dict(color='#FFFFFF', width=2)))
-    #Fig3
-    fig3 = px.pie(values=filtered_df[list(set(etiquetas))].sum().values, 
-                names=filtered_df[list(set(etiquetas))].sum().index,
-                hole=0.5, title="Consumo por tipo de carga (etiqueta)",
-                color_discrete_sequence=color_palette)
-    fig3.update_traces(marker=dict(line=dict(color='#FFFFFF', width=2)))
-    # Fig4
-    df_mes_actual = filtered_df
-    df_mes_anterior = data[data["Time Bucket"] >= filtered_df["Time Bucket"].max()-relativedelta(days=len(filtered_df))]
-    fig4 = go.Figure()
-    fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
-                    y=df_mes_actual["Consumo total"], 
-                    name="Mes Actual",
-                    marker_color='#C0cea2'))
-    fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
-                    y=df_mes_anterior["Consumo total"], 
-                    name="Mes Anterior",
-                    marker_color='#668616'))
-    fig4.update_layout(barmode='overlay', 
-                    title='Comparación de consumo con periodo anterior', yaxis_title="Consumo total (kWh)",
-                    legend=dict(orientation="h", yanchor="bottom", y=0.97, xanchor="right", x=1),
-                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    fig4.update_yaxes(type='log')
-    # Fig5
-    circuitos = etiq_df.drop(['Time Bucket']+fases,axis=1,inplace=False).sum()
-    table2 = pd.DataFrame(circuitos)
-    table2.columns = ['Consumo (kWh)']
-    table2.loc['Otras Cargas',:] = filtered_df[fases].sum().sum()-circuitos.sum()
-    table2['%'] = (table2)/(table2.sum().sum())*100
-    table2.loc['Total',:] = table2.sum()
-    plot = table2.sort_values(by='%', ascending=False)
-    table2 = table2.sort_values(by='%', ascending=True)
-    table2 = table2.applymap(lambda x: '{:.2f}'.format(x))
-    fig5 = px.bar(x=plot.drop('Total').index, y=plot.drop('Total')['%'], barmode='group')
-    fig5.update_traces(marker_color='#668616')
-    fig5.update_layout(title='Consumos principales por circuito',  
-                    yaxis_title='Consumo total (%)', showlegend=False, xaxis_title='',
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    #Fig6
-    df = df_mes_anterior.drop(['Time Bucket','Consumo total']+list(set(etiquetas))+fases,axis=1)
-    df = df[df > df.mean()+2*df.std()]
-    fig6 = px.bar(df.sum()[df.sum()>1], orientation='h')
-    fig6.update_traces(marker_color='#668616')
-    fig6.update_layout(title='Consumos atípicos con periodo anterior (µ+2σ)', 
-                    xaxis_title="Consumo total (kWh)", showlegend=False, yaxis_title="",
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    # Tables
-    table1 = pd.DataFrame(filtered_df[fases].sum())
-    table1.columns = ['Consumo (kWh)']
-    table1.loc['Total',:] = filtered_df[fases].sum().sum()
-    table1 = table1.applymap(lambda x: '{:.2f}'.format(x))
-    table3 = pd.DataFrame()
-    actual = df_mes_actual['Consumo total']
-    anterior = df_mes_anterior['Consumo total']
-    if actual.sum() < anterior.sum():
-        table3.loc['Tendencia de Consumo', 'Análisis'] = '↓'
-    else: table3.loc['Tendencia de Consumo', 'Análisis'] = '↑'
-    table3.loc['Aumento / Disminución de línea base por suma', 'Análisis'] = f'{round((actual.sum()-anterior.sum())/actual.sum()*100,2)} %'
-    table3.loc['Aumento / Disminución de línea base por promedio', 'Análisis'] = f'{round((actual.mean()-anterior.mean())/actual.mean()*100,2)} %'
-    table3.loc['Potencial de ahorro próximo periodo', 'Análisis'] = f'{round(df.sum().sum()/circuitos.sum()*100,2)} %'
-    table3.loc['Beneficio esperado', 'Análisis'] = f'{round(df.sum().sum(),2)} kWh'
-    table1.insert(0, 'Fase', table1.index)
-    table2.insert(0, 'Circuito', table2.index)
-    table3.insert(0, '', table3.index)
-
-    # Output_dash_layout
-    title_output = html.Div([
-        html.H1(f'Reporte cliente: {cliente}', style={'font-size':'40px', 'color':'#668616', 'font-family':'Arial, sans-serif', 'margin-bottom': '5px'}),
-        html.P(f'Desde: {filtered_df["Time Bucket"].min()}. Hasta: {filtered_df["Time Bucket"].max()}', style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
-        html.P(f"Data tomada hasta: {pd.Timestamp.now().strftime('%Y-%m-%d - %H:%M:%S')}", style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
-    ], style={'width':'100%', 'text-align':'center'})
-    dash_output= html.Div([
-        html.Div([
-            html.Div([
-                dash_table.DataTable(
-                    id='Consumo por fases',
-                    columns=[{'name': col, 'id': col} for col in table1.columns],
-                    data=table1.to_dict('records'),
-                    style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
-                                'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
-                                'maxWidth':'150px', 'overflowWrap': 'break-word'},
-                    style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
-                ),
-                dash_table.DataTable(
-                    id='Consumo por circuito',
-                    columns=[{'name': col, 'id': col} for col in table2.columns],
-                    data=table2.to_dict('records'),
-                    style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
-                                'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
-                                'maxWidth':'150px', 'overflowWrap': 'break-word'},
-                    style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
-                ),
-                dash_table.DataTable(
-                    id='Análisis',
-                    columns=[{'name': col, 'id': col} for col in table3.columns],
-                    data=table3.to_dict('records'),
-                    style_cell={'textAlign':'center', 'font-family':'Arial, sans-serif', 'font-size':'12px',
-                                'padding':'8px', 'whiteSpace':'normal', 'minWidth':'50px',
-                                'maxWidth':'150px', 'overflowWrap': 'break-word'},
-                    style_header={'backgroundColor':'#668616', 'color':'white', 'fontWeight':'bold'},
-                ),
-            ], style={'width':'22%', 'float':'left', 'margin-right':'0px'}),
-            html.Div([
-                html.Div([
-                    dcc.Graph(figure=fig1, style={'margin-right': '0'}), 
-                ], style={'grid-area':'graph1', 'margin-bottom':'-15px'}),
-                html.Div([
-                    dcc.Graph(figure=fig2, style={'margin-right': '0'}),  
-                ], style={'grid-area':'graph2', 'margin-bottom':'-15px'}),
-                html.Div([
-                    dcc.Graph(figure=fig3, style={'margin-right': '0px', 'width': '460px', 'height': '460px'}),
-                ], style={'grid-area':'graph3', 'margin-bottom':'-15px'}),
-                html.Div([
-                    dcc.Graph(figure=fig4, style={'margin-right': '0'}),  
-                ], style={'grid-area':'graph4', 'margin-bottom':'-15px'}),
-                html.Div([
-                    dcc.Graph(figure=fig5, style={'margin-right': '0'}),  
-                ], style={'grid-area':'graph5', 'margin-bottom':'-15px'}),
-                html.Div([
-                    dcc.Graph(figure=fig6, style={'margin-right': '0px'}),  
-                ], style={'grid-area':'graph6', 'margin-bottom':'-15px'}),
-            ], style={'display':'grid', 'grid-template-columns':'repeat(3, 1fr)',
-                    'grid-template-areas':"'graph1 graph2 graph3' 'graph4 graph5 graph6'"}),
-        ])], style={'display':'grid', 'font-family':'Arial, sans-serif', 'width': 'calc(100% + 45px)', 'margin-right':'0'})
-    return title_output, dash_output
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
+url = "https://media.licdn.com/dms/image/C560BAQEkLah7iU0OXg/company-logo_200_200/0/1622576378267?e=1701907200&v=beta&t=jHOKiWYubvJbIHNss3cvWPgbf5Rv_427P9tq7jcd5pY"
+response = requests.get(url)
+image_bytes = BytesIO(response.content)
+encoded_image = base64.b64encode(image_bytes.read()).decode("utf-8")
+date_range = pd.date_range(start=datetime.now()-relativedelta(days=90), end=datetime.now()-relativedelta(days=1))
+app.layout = html.Div([
+    html.Img(src='data:image/png;base64,{}'.format(encoded_image), style={'width':'12.5%', 'float':'left', 'margin-left':'150px', 'margin-top':'-35px'}),
+    dcc.Input(id='email', type='email', placeholder='Ingrese su correo'),
+    dcc.Input(id='client', type='text', placeholder='Ingrese el monitor'),
+    dcc.DatePickerRange(
+            id='my-date-picker-range',
+            min_date_allowed=date_range.min(),
+            max_date_allowed=date_range.max(),
+            initial_visible_month=(datetime.now()-relativedelta(months=1)).date(),
+            start_date=(datetime.now()-relativedelta(months=1)).date(),
+            end_date=date_range.max()),
+    html.Div(id='text_info'),
+    html.Div(id='title_output'),
+    html.Div(id='dash_output'),
+], style={'width':'100%', 'text-align':'center'})
+@app.callback(
+    Output('text_info', 'children'),
+    Output('title_output', 'children'),
+    Output('dash_output', 'children'),
+    Input('email', 'value'),
+    Input('client', 'value'),
+    Input('my-date-picker-range', 'start_date'),
+    Input('my-date-picker-range', 'end_date')
+)
+def update_output(email, client, start_date, end_date):
+    if email and client:
+        start_time = time.time()
+        if email in ['info@cigepty.com', 'hsoto@cigepty.com']:
+            device_name, data = data_api(client)
+            start_date = pd.Timestamp(start_date).to_pydatetime().date()
+            end_date = pd.Timestamp(end_date).to_pydatetime().date()
+            title_output, dash_output = transforming(device_name, data, start_date, end_date)
+            execution_time = round(time.time() - start_time, 2)
+            return f'Tiempo de ejecución: {execution_time}s',title_output, dash_output
+        else:
+            return 'Acceso denegado. Verifica tus credenciales o revisa tus tokens.', None, None
+    else:
+        return 'Tiempo estimado en generar Dash: 30s', None, None
+if __name__ == '__main__':
+    app.run_server(debug=True)
