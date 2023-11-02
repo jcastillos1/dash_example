@@ -24,9 +24,9 @@ def transforming(cliente, data, start_date, end_date):
 
     # Gráficos
     #Fig1
-    fig1 = px.line(x=data["Time Bucket"], y=data["Consumo total"])
-    fig1.update_traces(line=dict(color='#668616'))
-    fig1.update_layout(title="Consumo total histórico",
+    fig1 = px.bar(x=filtered_df["Time Bucket"], y=filtered_df["Consumo total"])
+    fig1.update_traces(marker_color='#668616')
+    fig1.update_layout(title="Consumo total",
                     xaxis_title="Fecha", yaxis_title="Consumo total (kWh)",
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
