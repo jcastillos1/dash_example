@@ -29,7 +29,7 @@ app.layout = html.Div([
             initial_visible_month=(datetime.now()-relativedelta(months=1)).date(),
             start_date = (datetime.now()-relativedelta(months=1)-relativedelta(days=1)).date(),
             end_date = date_range.max()),
-    html.Div(id='text_info'),
+    html.Div('Tiempo estimado en generar informe por primera vez: 1.5min', id='text_info'),
     html.Div(id='title_output'),
     html.Div(id='dash_output'),
 ], style={'width':'100%', 'text-align':'center'})
@@ -42,19 +42,17 @@ app.layout = html.Div([
     Input('my-date-picker-range', 'start_date'),
     Input('my-date-picker-range', 'end_date')
 )
-def update_output(email, client, start_date, end_date):
-    if email and client:
+def update_output(email, client, start_date, end_date): 
+    if email in ['info@cigepty.com', 'hsoto@cigepty.com'] and client!=None:
         start_time = time.time()
-        if email in ['info@cigepty.com', 'hsoto@cigepty.com']:
-            device_name, data, data_hist = data_api(client)
-            start_date = pd.Timestamp(start_date).to_pydatetime().date()
-            end_date = pd.Timestamp(end_date).to_pydatetime().date()
-            title_output, dash_output = transforming(device_name, data, data_hist, start_date, end_date)
-            execution_time = round(time.time() - start_time, 2)
-            return f'Tiempo de ejecución: {execution_time}s',title_output, dash_output
-        else:
-            return 'Acceso denegado, verifica tus credenciales.', None, None
+        device_name, data, data_hist = data_api(client)
+        start_date = pd.Timestamp(start_date).to_pydatetime().date()
+        end_date = pd.Timestamp(end_date).to_pydatetime().date()
+        title_output, dash_output = transforming(device_name, data, data_hist, start_date, end_date)
+        execution_time = round(time.time() - start_time, 2)
+        return f'Tiempo de ejecución: {execution_time}s',title_output, dash_output
     else:
-        return 'Tiempo estimado en generar informe por primera vez: 1.5min', None, None
+        return 'Acceso denegado, verifica tus credenciales.', None, None
+
 if __name__ == '__main__':
     app.run_server(debug=True)
