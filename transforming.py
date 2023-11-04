@@ -72,7 +72,7 @@ def transforming(cliente, data, data_hist, start_date, end_date):
     table2 = table2.applymap(lambda x: '{:.2f}'.format(x))
     fig5 = px.bar(x=plot.drop('Total').index, y=plot.drop('Total')['%'], barmode='group')
     fig5.update_traces(marker_color='#668616')
-    fig5.update_layout(title='Consumos principales por circuito',  
+    fig5.update_layout(title='Consumos principales por circuito', xaxis_title='',
                     yaxis_title='Consumo total (%)', showlegend=False, xaxis_title='',
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     #Fig6
