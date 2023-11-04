@@ -43,7 +43,7 @@ app.layout = html.Div([
     Input('my-date-picker-range', 'end_date')
 )
 def update_output(email, client, start_date, end_date): 
-    if email in ['info@cigepty.com', 'hsoto@cigepty.com'] and len(client)>0:
+    if email in ['info@cigepty.com', 'hsoto@cigepty.com'] and client!=None:
         start_time = time.time()
         device_name, data, data_hist = data_api(client)
         start_date = pd.Timestamp(start_date).to_pydatetime().date()
@@ -51,7 +51,7 @@ def update_output(email, client, start_date, end_date):
         title_output, dash_output = transforming(device_name, data, data_hist, start_date, end_date)
         execution_time = round(time.time() - start_time, 2)
         return f'Tiempo de ejecución: {execution_time}s', title_output, dash_output
-    else:
+    if not email in ['info@cigepty.com', 'hsoto@cigepty.com']:
         return 'Acceso denegado, verifica tus credenciales.', None, None
 
 if __name__ == '__main__':
