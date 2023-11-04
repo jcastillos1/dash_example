@@ -43,7 +43,7 @@ app.layout = html.Div([
     Input('my-date-picker-range', 'end_date')
 )
 def update_output(email, client, start_date, end_date):
-    if email in ['hsoto@cigepty.com', 'info@cigepty.com'] and client:
+    if email and client:
         start_time = time.time()
         if email in ['info@cigepty.com', 'hsoto@cigepty.com']:
             device_name, data, data_hist = data_api(client)
