@@ -58,7 +58,7 @@ def transforming(cliente, data, data_hist, start_date, end_date):
     fig4 = px.bar(x=data_hist["Time Bucket"], y=data_hist.drop('Time Bucket', axis=1).sum(axis=1))
     fig4.update_traces(marker_color='#668616')
     fig4.update_layout(title="Consumo total por mes", yaxis_title="Consumo (kWh)",
-                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
+                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=False), xaxis_title="",
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     # Fig5
     circuitos = etiq_df.drop(['Time Bucket']+fases,axis=1,inplace=False).sum()
@@ -73,7 +73,7 @@ def transforming(cliente, data, data_hist, start_date, end_date):
     fig5 = px.bar(x=plot.drop('Total').index, y=plot.drop('Total')['%'], barmode='group')
     fig5.update_traces(marker_color='#668616')
     fig5.update_layout(title='Consumos principales por circuito', xaxis_title='',
-                    yaxis_title='Consumo total (%)', showlegend=False, 
+                    yaxis_title='Consumo (%)', showlegend=False, 
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     #Fig6
     df = df_mes_anterior.drop(['Time Bucket','Consumo total']+list(set(etiquetas))+fases,axis=1)
