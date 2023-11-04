@@ -30,7 +30,7 @@ def data_api(cliente):
     deviceUsageRequest.scale = DataResolution.Days
     deviceUsageRequest.channels = DeviceUsageRequest.UsageChannel.ALL
     usageResponse = stub.GetUsageData(deviceUsageRequest)
-    names = {}; data = pd.DataFrame()
+    names = {}; data = pd.DataFrame(); device_id=''
     for device in inventoryResponse.devices: 
         if cliente.lower() in device.device_name.lower():
             device_name = device.device_name
@@ -54,7 +54,7 @@ def data_api(cliente):
     deviceUsageRequest.scale = DataResolution.Months
     deviceUsageRequest.channels = DeviceUsageRequest.UsageChannel.ALL
     usageResponse = stub.GetUsageData(deviceUsageRequest)
-    names = {}; data_hist = pd.DataFrame()
+    names = {}; data_hist = pd.DataFrame(); device_id=''
     for device in inventoryResponse.devices: 
         if cliente.lower() in device.device_name.lower():
             device_name = device.device_name
@@ -70,4 +70,5 @@ def data_api(cliente):
         if circuit.channel in names.keys():
             data_hist[f'{circuit.channel}-{names[circuit.channel]}'] = np.array(circuit.usages)/1000
 
+    # Returns all data hist and 2 months data
     return device_name, data, data_hist
