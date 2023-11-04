@@ -1,12 +1,10 @@
 from dateutil.relativedelta import relativedelta
 from dash import dcc, html, dash_table
-import plotly.graph_objs as go
 import plotly.express as px
 import pandas as pd
 
 
-def transforming(cliente, data, start_date, end_date):
-    data = data.copy()
+def transforming(cliente, data, data_hist, start_date, end_date):
     lista_separada = [valor.split('-') for valor in data.columns]
     fases = [elemento[1] for elemento in lista_separada if len(elemento) == 2]
     etiquetas = [elemento[1] for elemento in lista_separada if len(elemento) >= 3]
@@ -26,10 +24,9 @@ def transforming(cliente, data, start_date, end_date):
     #Fig1
     fig1 = px.bar(x=filtered_df["Time Bucket"], y=filtered_df["Consumo total"])
     fig1.update_traces(marker_color='#668616')
-    fig1.update_layout(title="Consumo total",
-                    xaxis_title="Fecha", yaxis_title="Consumo total (kWh)",
-                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
-                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+    fig1.update_layout(title="Consumo total por día", yaxis_title="Consumo (kWh)", xaxis_title="",
+                            xaxis=dict(showgrid=False), yaxis=dict(showgrid=False), 
+                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     #Fig2
     base_color = '#668616'
     num_colors = 7  # Número de tonos en la paleta
@@ -58,21 +55,11 @@ def transforming(cliente, data, start_date, end_date):
     # Fig4
     df_mes_actual = filtered_df
     df_mes_anterior = data[data["Time Bucket"] >= filtered_df["Time Bucket"].max()-relativedelta(days=len(filtered_df))]
-    fig4 = go.Figure()
-    fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
-                    y=df_mes_actual["Consumo total"], 
-                    name="Mes Actual",
-                    marker_color='#C0cea2'))
-    fig4.add_trace(go.Bar(x=df_mes_actual["Time Bucket"], 
-                    y=df_mes_anterior["Consumo total"], 
-                    name="Mes Anterior",
-                    marker_color='#668616'))
-    fig4.update_layout(barmode='overlay', 
-                    title='Comparación de consumo con periodo anterior', yaxis_title="Consumo total (kWh)",
-                    legend=dict(orientation="h", yanchor="bottom", y=0.97, xanchor="right", x=1),
+    fig4 = px.bar(x=data_hist["Time Bucket"], y=data_hist.drop('Time Bucket', axis=1).sum(axis=1))
+    fig4.update_traces(marker_color='#668616')
+    fig4.update_layout(title="Consumo total por mes", yaxis_title="Consumo (kWh)",
                     xaxis=dict(showgrid=False), yaxis=dict(showgrid=False),
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    fig4.update_yaxes(type='log')
     # Fig5
     circuitos = etiq_df.drop(['Time Bucket']+fases,axis=1,inplace=False).sum()
     table2 = pd.DataFrame(circuitos)
@@ -94,7 +81,7 @@ def transforming(cliente, data, start_date, end_date):
     fig6 = px.bar(df.sum()[df.sum()>1], orientation='h')
     fig6.update_traces(marker_color='#668616')
     fig6.update_layout(title='Consumos atípicos con periodo anterior (µ+2σ)', 
-                    xaxis_title="Consumo total (kWh)", showlegend=False, yaxis_title="",
+                    xaxis_title="Consumo (kWh)", showlegend=False, yaxis_title="",
                     paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
     # Tables
     table1 = pd.DataFrame(filtered_df[fases].sum())
@@ -107,8 +94,8 @@ def transforming(cliente, data, start_date, end_date):
     if actual.sum() < anterior.sum():
         table3.loc['Tendencia de Consumo', 'Análisis'] = '↓'
     else: table3.loc['Tendencia de Consumo', 'Análisis'] = '↑'
-    table3.loc['Aumento / Disminución de línea base por suma', 'Análisis'] = f'{round((actual.sum()-anterior.sum())/actual.sum()*100,2)} %'
-    table3.loc['Aumento / Disminución de línea base por promedio', 'Análisis'] = f'{round((actual.mean()-anterior.mean())/actual.mean()*100,2)} %'
+    table3.loc['Diferencia de línea base por suma', 'Análisis'] = f'{round((actual.sum()-anterior.sum())/actual.sum()*100,2)} %'
+    table3.loc['Diferencia de línea base por promedio', 'Análisis'] = f'{round((actual.mean()-anterior.mean())/actual.mean()*100,2)} %'
     table3.loc['Potencial de ahorro próximo periodo', 'Análisis'] = f'{round(df.sum().sum()/circuitos.sum()*100,2)} %'
     table3.loc['Beneficio esperado', 'Análisis'] = f'{round(df.sum().sum(),2)} kWh'
     table1.insert(0, 'Fase', table1.index)
