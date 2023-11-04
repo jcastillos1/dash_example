@@ -29,7 +29,7 @@ app.layout = html.Div([
             initial_visible_month=(datetime.now()-relativedelta(months=1)).date(),
             start_date = (datetime.now()-relativedelta(months=1)-relativedelta(days=1)).date(),
             end_date = date_range.max()),
-    html.Div('Tiempo estimado en generar informe por primera vez: 1.5min', id='text_info'),
+    html.Div(id='text_info'),
     html.Div(id='title_output'),
     html.Div(id='dash_output'),
 ], style={'width':'100%', 'text-align':'center'})
@@ -54,5 +54,7 @@ def update_output(email, client, start_date, end_date):
             return f'Tiempo de ejecución: {execution_time}s', title_output, dash_output
         else:
             return 'Acceso denegado, verifica que sea un correo válido.', None, None
+    else:
+        return 'Tiempo estimado en generar informe por primera vez: 1.5min', None, None
 if __name__ == '__main__':
     app.run_server(debug=True)
