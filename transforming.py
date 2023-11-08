@@ -65,12 +65,12 @@ def transforming(cliente, data, data_hist, start_date, end_date):
     table2 = pd.DataFrame(circuitos)
     table2.columns = ['Consumo (kWh)']
     table2.loc['Otras Cargas',:] = filtered_df[fases].sum().sum()-circuitos.sum()
-    table2 = table2.astype(int)
     table2['%'] = (table2)/(table2.sum().sum())*100
     table2.loc['Total',:] = table2.sum()
     plot = table2.sort_values(by='%', ascending=False)
     table2 = table2.sort_values(by='%', ascending=True)
-    table2 = table2.applymap(lambda x: '{:.2f}'.format(x))
+    table2['Consumo (kWh)'] = table2['Consumo (kWh)'].round(0).astype(int)
+    table2['%'] = table2['%'].round(2)
     fig5 = px.bar(x=plot.drop('Total').index, y=plot.drop('Total')['%'], barmode='group')
     fig5.update_traces(marker_color='#668616')
     fig5.update_layout(title='Consumos principales por circuito', xaxis_title='',
