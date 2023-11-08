@@ -65,6 +65,7 @@ def transforming(cliente, data, data_hist, start_date, end_date):
     table2 = pd.DataFrame(circuitos)
     table2.columns = ['Consumo (kWh)']
     table2.loc['Otras Cargas',:] = filtered_df[fases].sum().sum()-circuitos.sum()
+    table2 = table2.astype(int)
     table2['%'] = (table2)/(table2.sum().sum())*100
     table2.loc['Total',:] = table2.sum()
     plot = table2.sort_values(by='%', ascending=False)
@@ -104,7 +105,7 @@ def transforming(cliente, data, data_hist, start_date, end_date):
 
     # Output_dash_layout
     title_output = html.Div([
-        html.H1(f'Reporte cliente: {cliente}', style={'font-size':'40px', 'color':'#668616', 'font-family':'Arial, sans-serif', 'margin-bottom': '5px'}),
+        html.H1(f'Reporte del monitor: {cliente}', style={'font-size':'40px', 'color':'#668616', 'font-family':'Arial, sans-serif', 'margin-bottom': '5px'}),
         html.P(f'Desde: {filtered_df["Time Bucket"].min()}. Hasta: {filtered_df["Time Bucket"].max()}', style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
         html.P(f"Data tomada hasta: {pd.Timestamp.now().strftime('%Y-%m-%d - %H:%M:%S')}", style={'text-align':'center', 'font-family':'Arial, sans-serif'}),
     ], style={'width':'100%', 'text-align':'center'})
