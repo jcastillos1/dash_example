@@ -63,9 +63,8 @@ def data_api(cliente):
                 if circuit.name != '': 
                     names[circuit.channel_number] = circuit.sub_type+'-'+circuit.name
     device_found =  [i for i in usageResponse.device_usages if i.manufacturer_device_id==device_id][0]
-    data_hist['Time Bucket'] = pd.date_range(start=datetime.now()-relativedelta(years=1),
-                                        end=datetime.now()+relativedelta(months=1),
-                                        freq='M').strftime('%b %Y')    
+    data_hist['Time Bucket'] = pd.date_range(start=datetime.now()-relativedelta(months=len(device_found.channel_usages[0].usages)),
+                                            end=datetime.now()+relativedelta(months=1), freq='M').strftime('%b %Y')   
     for circuit in device_found.channel_usages:
         if circuit.channel in names.keys():
             data_hist[f'{circuit.channel}-{names[circuit.channel]}'] = np.array(circuit.usages)/1000
